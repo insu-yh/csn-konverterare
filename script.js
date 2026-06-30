@@ -23,7 +23,10 @@ function handleFile(file){
     try{
       const wb = XLSX.read(new Uint8Array(e.target.result), {type:'array', cellDates:true});
       const ws = wb.Sheets[wb.SheetNames[0]];
-      const rows = XLSX.utils.sheet_to_json(ws, {defval:null, raw:false});
+      // Viktigt: raw:true gör att Excel-datum läses som Date-objekt i stället
+      // för som formaterad text. Annars kan en svensk/Excel-formatering råka
+      // bli 2026-26-01 i stället för 2026-01-26.
+      const rows = XLSX.utils.sheet_to_json(ws, {defval:null, raw:true});
       const normalized = rows.map((row, i) => normalizeRow(row, i + 2)).filter(r => r.hasAnyData);
       const checked = normalized.map(validateRow);
       const exportRows = checked.filter(r => r.exportable);
@@ -48,11 +51,30 @@ function normalizeRow(row, excelRow){
 }
 function normalizeValue(field, value){
   if(value === null || value === undefined) return '';
+
+  const dateFields = new Set(['fromDatum','tomDatum','resultatDatum','andringsDatum','avbrottsDatum']);
+
   if(value instanceof Date && !isNaN(value)) return toIsoDate(value);
+
+  // Om datum av någon anledning kommer som Excels serienummer.
+  if(dateFields.has(field) && typeof value === 'number') return excelSerialToIso(value);
+
   const text = String(value).trim();
   if(!text) return '';
-  if(/^\d{4}-\d{2}-\d{2}$/.test(text)) return text;
-  if(/^\d{1,2}[/.-]\d{1,2}[/.-]\d{2,4}$/.test(text)){
+
+  // CSN vill ha YYYY-MM-DD. Om vi ser YYYY-DD-MM, byt till YYYY-MM-DD.
+  const isoLike = text.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);
+  if(isoLike){
+    const [, y, a, b] = isoLike;
+    const first = Number(a), second = Number(b);
+    if(dateFields.has(field) && first > 12 && second <= 12){
+      return `${y}-${String(second).padStart(2,'0')}-${String(first).padStart(2,'0')}`;
+    }
+    return `${y}-${String(first).padStart(2,'0')}-${String(second).padStart(2,'0')}`;
+  }
+
+  // Svenska datum: DD/MM/YYYY, DD.MM.YYYY eller DD-MM-YYYY.
+  if(dateFields.has(field) && /^\d{1,2}[/.-]\d{1,2}[/.-]\d{2,4}$/.test(text)){
     const parts = text.split(/[/. -]/).filter(Boolean).map(Number);
     let [d,m,y] = parts; if(y < 100) y += 2000;
     return `${y}-${String(m).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
@@ -60,6 +82,12 @@ function normalizeValue(field, value){
   return text;
 }
 function toIsoDate(d){ return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; }
+function excelSerialToIso(serial){
+  const utcDays = Math.floor(serial - 25569);
+  const utcValue = utcDays * 86400;
+  const dateInfo = new Date(utcValue * 1000);
+  return toIsoDate(dateInfo);
+}
 function normalizePersonnummer(value){
   const s = String(value || '').trim(); if(!s) return '';
   return s.replace(/\D/g,'');
