@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="sv">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>CSN-konverterare</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <main>
+    <section class="hero">
+      <h1>CSN-konverterare</h1>
+      <p>Ladda upp Excel-mallen och ladda ner en färdig XML-fil för CSN. Allt körs lokalt i webbläsaren.</p>
+    </section>
+
+    <section class="card">
+      <label for="fileInput" class="dropzone" id="dropzone">
+        <strong>Välj Excel-fil</strong>
+        <span>eller dra filen hit</span>
+        <input id="fileInput" type="file" accept=".xlsx,.xls" />
+      </label>
+
+      <div class="controls">
+        <label>
+          Filnamn för XML
+          <input id="outputName" type="text" value="csn-rapport.xml" />
+        </label>
+        <button id="downloadBtn" disabled>Ladda ner XML</button>
+      </div>
+    </section>
+
+    <section class="grid">
+      <div class="card">
+        <h2>Kontroll</h2>
+        <ul id="summary"></ul>
+      </div>
+      <div class="card">
+        <h2>Varningar</h2>
+        <ul id="warnings"></ul>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>Förhandsgranskning</h2>
+      <div class="tableWrap">
+        <table id="previewTable"></table>
+      </div>
+    </section>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <script src="script.js"></script>
+</body>
+</html>
