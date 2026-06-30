@@ -3,16 +3,19 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>CSN-konverterare</title>
+  <title>INSU – CSN-konverterare</title>
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
   <main class="app">
     <header class="hero">
-      <div>
-        <p class="eyebrow">INSU YH</p>
-        <h1>CSN-konverterare</h1>
-        <p class="lead">Konvertera CSN-mallen i Excel till XML. All bearbetning sker lokalt i webbläsaren.</p>
+      <div class="brand-row">
+        <div class="insu-mark" aria-hidden="true">INSU</div>
+        <div>
+          <p class="eyebrow">INSU YH</p>
+          <h1>CSN-konverterare</h1>
+          <p class="lead">Skapa CSN-fil från Excel. All bearbetning sker lokalt i webbläsaren.</p>
+        </div>
       </div>
       <div class="badge">Ingen data skickas vidare</div>
     </header>
@@ -25,8 +28,8 @@
         <span>eller dra filen hit</span>
       </label>
       <div class="settings">
-        <label>XML-filnamn<input id="outputName" type="text" value="csn-rapport.xml" /></label>
-        <button id="downloadBtn" disabled>Ladda ner XML</button>
+        <label>CSN-filnamn<input id="outputName" type="text" value="csn-rapport.xml" /></label>
+        <button id="downloadBtn" disabled>Skapa CSN-fil</button>
       </div>
     </section>
 
@@ -64,13 +67,13 @@
 
     <section class="panel">
       <h2>Rader som ignoreras</h2>
-      <p class="helper">Rader här tas inte med i XML-filen.</p>
+      <p class="helper">Rader här tas inte med i CSN-filen.</p>
       <div class="table-wrap"><table id="ignoredTable"></table></div>
     </section>
 
     <section class="panel">
       <h2>XML-preview</h2>
-      <pre id="xmlPreview">Ingen XML skapad ännu.</pre>
+      <pre id="xmlPreview">Ingen CSN-fil skapad ännu.</pre>
     </section>
   </main>
 
