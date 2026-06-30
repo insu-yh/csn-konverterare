@@ -6,20 +6,24 @@ const outputName = document.getElementById('outputName');
 const summary = document.getElementById('summary');
 const warningsEl = document.getElementById('warnings');
 const previewTable = document.getElementById('previewTable');
+const ignoredTable = document.getElementById('ignoredTable');
 const xmlPreview = document.getElementById('xmlPreview');
 const statRows = document.getElementById('statRows');
-const statStudents = document.getElementById('statStudents');
+const statExported = document.getElementById('statExported');
+const statIgnored = document.getElementById('statIgnored');
 const statWarnings = document.getElementById('statWarnings');
-const statSchool = document.getElementById('statSchool');
 
 let generatedXml = '';
-let parsedRows = [];
-let warnings = [];
+let allRows = [];
+let exportRows = [];
+let ignoredRows = [];
+let checks = [];
 
 const XML_NS = 'http://schema.csn.se/Studeranderapport';
 const DATE_FIELDS = ['fromDatum', 'tomDatum', 'resultatDatum', 'andringsDatum', 'avbrottsDatum'];
 const FIELD_ORDER = ['fromDatum', 'tomDatum', 'omfattning', 'resultat', 'resultatDatum', 'andringsDatum', 'avbrottsDatum', 'uppdragsutbildning', 'resultatAvbrott'];
-const PREVIEW_COLS = ['_rowNumber', 'skolId', 'personnummer', 'fromDatum', 'tomDatum', 'omfattning', 'resultat', 'resultatDatum', 'avbrottsDatum', 'resultatAvbrott'];
+const PREVIEW_COLS = ['_rowNumber', '_status', 'skolId', 'personnummer', 'fromDatum', 'tomDatum', 'omfattning', 'resultat', 'resultatDatum', 'avbrottsDatum', 'resultatAvbrott'];
+const REQUIRED_EXPORT_FIELDS = ['personnummer', 'fromDatum', 'tomDatum', 'omfattning'];
 
 function normalizeHeader(header) {
   return String(header || '').trim().replace(/^ns\d*:/i, '').replace(/^.*:/, '');
@@ -37,9 +41,7 @@ function escapeXml(value) {
 function excelSerialDateToIso(value) {
   const parsed = XLSX.SSF.parse_date_code(value);
   if (!parsed) return String(value);
-  const mm = String(parsed.m).padStart(2, '0');
-  const dd = String(parsed.d).padStart(2, '0');
-  return `${parsed.y}-${mm}-${dd}`;
+  return `${parsed.y}-${String(parsed.m).padStart(2, '0')}-${String(parsed.d).padStart(2, '0')}`;
 }
 
 function formatDate(value) {
@@ -91,10 +93,25 @@ function parseWorkbook(arrayBuffer) {
   }).filter(row => !isEmptyRow(row));
 }
 
+function rowExportEligibility(row) {
+  const missing = REQUIRED_EXPORT_FIELDS.filter(field => !row[field]);
+  if (missing.length) {
+    return { exportable: false, reason: `Saknar obligatoriskt fält: ${missing.join(', ')}` };
+  }
+  return { exportable: true, reason: 'Exporteras' };
+}
+
+function annotateRows(rows) {
+  return rows.map(row => {
+    const eligibility = rowExportEligibility(row);
+    return { ...row, _exportable: eligibility.exportable, _reason: eligibility.reason };
+  });
+}
+
 function validateRows(rows) {
   const result = [];
   const schoolIds = new Set(rows.map(r => r.skolId).filter(Boolean));
-  if (schoolIds.size > 1) result.push({ text: `Flera skolId hittades: ${[...schoolIds].join(', ')}. Kontrollera att detta är avsiktligt.`, type: 'warn' });
+  if (schoolIds.size > 1) result.push({ text: `Flera skolId hittades i rader som exporteras: ${[...schoolIds].join(', ')}. Kontrollera att detta är avsiktligt.`, type: 'warn' });
 
   rows.forEach(row => {
     const prefix = `Rad ${row._rowNumber}`;
@@ -156,48 +173,80 @@ function renderList(el, items, emptyText) {
   });
 }
 
-function renderSummary(rows, warningList) {
-  const schoolIds = [...new Set(rows.map(r => r.skolId).filter(Boolean))];
-  const students = new Set(rows.map(r => r.personnummer).filter(Boolean));
-  statRows.textContent = rows.length;
-  statStudents.textContent = students.size;
-  statWarnings.textContent = warningList.length;
-  statSchool.textContent = schoolIds.length === 1 ? schoolIds[0] : (schoolIds.length || '–');
+function renderSummary() {
+  const students = new Set(exportRows.map(r => r.personnummer).filter(Boolean));
+  statRows.textContent = allRows.length;
+  statExported.textContent = exportRows.length;
+  statIgnored.textContent = ignoredRows.length;
+  statWarnings.textContent = checks.length;
+
   renderList(summary, [
-    { text: `${rows.length} rapporteringsrader hittades.`, type: rows.length ? 'ok' : 'bad' },
-    { text: `${students.size} unika studerande hittades.`, type: 'ok' },
-    { text: schoolIds.length === 1 ? `SkolId ${schoolIds[0]} används.` : `${schoolIds.length} olika skolId hittades.`, type: schoolIds.length === 1 ? 'ok' : 'warn' },
-    { text: warningList.length ? `${warningList.length} saker behöver kontrolleras.` : 'Inga uppenbara fel hittades.', type: warningList.length ? 'warn' : 'ok' }
+    { text: `${allRows.length} ifyllda rader hittades i Excel-filen.`, type: allRows.length ? 'ok' : 'bad' },
+    { text: `${exportRows.length} rader kommer exporteras till XML.`, type: exportRows.length ? 'ok' : 'bad' },
+    { text: `${ignoredRows.length} rader ignoreras.`, type: ignoredRows.length ? 'warn' : 'ok' },
+    { text: `${students.size} unika studerande exporteras.`, type: 'ok' },
+    { text: checks.length ? `${checks.length} saker behöver kontrolleras innan uppladdning till CSN.` : 'Inga uppenbara fel hittades i exporten.', type: checks.length ? 'warn' : 'ok' }
   ], 'Ingen sammanfattning ännu.');
 }
 
 function renderWarnings(warningList) {
-  renderList(warningsEl, warningList, 'Inga uppenbara fel hittades.');
+  const ignoredChecks = ignoredRows.map(row => ({ text: `Rad ${row._rowNumber} ignoreras: ${row._reason}.`, type: 'warn' }));
+  renderList(warningsEl, [...warningList, ...ignoredChecks], 'Inga uppenbara fel hittades.');
 }
 
-function renderPreview(rows) {
-  previewTable.innerHTML = '';
-  if (!rows.length) return;
+function maskPersonnummer(value) {
+  const s = String(value || '');
+  if (s.length < 6) return s;
+  return `${s.slice(0, 6)}******`;
+}
+
+function renderStatusCell(td, row) {
+  const span = document.createElement('span');
+  span.className = row._exportable ? 'status-pill status-ok' : 'status-pill status-warn';
+  span.textContent = row._exportable ? 'Exporteras' : 'Ignoreras';
+  td.appendChild(span);
+}
+
+function renderTable(table, rows) {
+  table.innerHTML = '';
+  if (!rows.length) {
+    const tr = document.createElement('tr');
+    const td = document.createElement('td');
+    td.textContent = 'Inga rader att visa.';
+    tr.appendChild(td);
+    table.appendChild(tr);
+    return;
+  }
   const thead = document.createElement('thead');
   const trh = document.createElement('tr');
   PREVIEW_COLS.forEach(c => {
     const th = document.createElement('th');
-    th.textContent = c === '_rowNumber' ? 'Excel-rad' : c;
+    th.textContent = c === '_rowNumber' ? 'Excel-rad' : c === '_status' ? 'Status' : c;
     trh.appendChild(th);
   });
+  const reasonTh = document.createElement('th');
+  reasonTh.textContent = 'Kommentar';
+  trh.appendChild(reasonTh);
   thead.appendChild(trh);
-  previewTable.appendChild(thead);
+  table.appendChild(thead);
+
   const tbody = document.createElement('tbody');
   rows.forEach(row => {
     const tr = document.createElement('tr');
+    if (!row._exportable) tr.className = 'warn';
     PREVIEW_COLS.forEach(c => {
       const td = document.createElement('td');
-      td.textContent = row[c] || '';
+      if (c === '_status') renderStatusCell(td, row);
+      else if (c === 'personnummer') td.textContent = maskPersonnummer(row[c]);
+      else td.textContent = row[c] || '';
       tr.appendChild(td);
     });
+    const tdReason = document.createElement('td');
+    tdReason.textContent = row._reason || '';
+    tr.appendChild(tdReason);
     tbody.appendChild(tr);
   });
-  previewTable.appendChild(tbody);
+  table.appendChild(tbody);
 }
 
 function utf16Blob(text) {
@@ -211,15 +260,20 @@ function utf16Blob(text) {
 async function handleFile(file) {
   try {
     const buffer = await file.arrayBuffer();
-    parsedRows = parseWorkbook(buffer);
-    warnings = validateRows(parsedRows);
-    generatedXml = buildXml(parsedRows);
-    renderSummary(parsedRows, warnings);
-    renderWarnings(warnings);
-    renderPreview(parsedRows);
-    xmlPreview.textContent = generatedXml.slice(0, 12000) + (generatedXml.length > 12000 ? '\n\n… XML:en är längre, men hela laddas ner.' : '');
-    downloadBtn.disabled = parsedRows.length === 0;
-    copyXmlBtn.disabled = parsedRows.length === 0;
+    allRows = annotateRows(parseWorkbook(buffer));
+    exportRows = allRows.filter(row => row._exportable);
+    ignoredRows = allRows.filter(row => !row._exportable);
+    checks = validateRows(exportRows);
+    generatedXml = exportRows.length ? buildXml(exportRows) : '';
+
+    renderSummary();
+    renderWarnings(checks);
+    renderTable(previewTable, exportRows);
+    renderTable(ignoredTable, ignoredRows);
+    xmlPreview.textContent = generatedXml ? generatedXml.slice(0, 12000) + (generatedXml.length > 12000 ? '\n\n… XML:en är längre, men hela laddas ner.' : '') : 'Ingen XML skapad eftersom inga exportbara rader hittades.';
+    downloadBtn.disabled = exportRows.length === 0;
+    copyXmlBtn.disabled = exportRows.length === 0;
+
     if (!outputName.value.trim() || outputName.value === 'csn-rapport.xml') {
       const base = file.name.replace(/\.[^.]+$/, '').replace(/\s+/g, '-').toLowerCase();
       outputName.value = `${base}.xml`;

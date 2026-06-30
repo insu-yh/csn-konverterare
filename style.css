@@ -61,3 +61,11 @@ pre { max-height: 340px; overflow: auto; background: #10201e; color: #d9fff5; pa
   .stats { grid-template-columns: 1fr 1fr; }
   .badge { width: fit-content; }
 }
+
+.helper { margin-top: -8px; margin-bottom: 14px; color: var(--muted); }
+tr.bad td { background: #fff0ee; }
+tr.warn td { background: #fffaf0; }
+.status-pill { display: inline-block; border-radius: 999px; padding: 4px 9px; font-weight: 800; font-size: 12px; }
+.status-ok { background: #ecf8f1; color: var(--ok); }
+.status-warn { background: #fff6db; color: var(--warn); }
+.status-bad { background: #fff0ee; color: var(--bad); }

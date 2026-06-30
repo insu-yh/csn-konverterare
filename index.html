@@ -35,10 +35,10 @@
     </section>
 
     <section class="stats" aria-live="polite">
-      <div class="stat"><span id="statRows">0</span><small>rader</small></div>
-      <div class="stat"><span id="statStudents">0</span><small>studerande</small></div>
-      <div class="stat"><span id="statWarnings">0</span><small>varningar</small></div>
-      <div class="stat"><span id="statSchool">–</span><small>skolId</small></div>
+      <div class="stat"><span id="statRows">0</span><small>hittade rader</small></div>
+      <div class="stat"><span id="statExported">0</span><small>exporteras</small></div>
+      <div class="stat"><span id="statIgnored">0</span><small>ignoreras</small></div>
+      <div class="stat"><span id="statWarnings">0</span><small>kontroller</small></div>
     </section>
 
     <section class="grid two">
@@ -54,10 +54,16 @@
 
     <section class="panel">
       <div class="section-head">
-        <h2>Förhandsgranskning</h2>
+        <h2>Förhandsgranskning: rader som exporteras</h2>
         <button id="copyXmlBtn" class="secondary" disabled>Kopiera XML</button>
       </div>
       <div class="table-wrap"><table id="previewTable"></table></div>
+    </section>
+
+    <section class="panel">
+      <h2>Rader som ignoreras</h2>
+      <p class="helper">Rader här tas inte med i XML-filen. Oftast saknas något obligatoriskt fält eller så är raden halvifylld.</p>
+      <div class="table-wrap"><table id="ignoredTable"></table></div>
     </section>
 
     <section class="panel">
