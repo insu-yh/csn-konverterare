@@ -1,20 +1,15 @@
 # CSN-konverterare
 
-Ett statiskt webbläsarverktyg som konverterar INSU:s CSN Excel-mall till XML-formatet `studeranderapport`.
+Statiskt webbläsarverktyg som konverterar INSU:s CSN Excel-mall till XML-formatet `studeranderapport`.
+
+## Version 4
+
+- Visar hittade rader, exporterade rader, ignorerade rader och varningar.
+- Har debug-panel rad för rad.
+- Maskerar personnummer i gränssnittet.
+- Exporterar bara rader där obligatoriska fält finns.
+- Skapar XML lokalt i webbläsaren.
 
 ## Viktigt
 
-- All bearbetning sker lokalt i webbläsaren.
-- Ladda aldrig upp riktiga CSN-filer, personnummer eller testfiler med persondata i detta repo.
-- Publicera endast själva verktyget och eventuell fejkad testdata.
-
-## Användning
-
-1. Öppna GitHub Pages-sidan.
-2. Ladda upp Excel-mallen.
-3. Kontrollera varningar.
-4. Ladda ner XML-filen.
-
-## GitHub Pages
-
-Settings → Pages → Deploy from a branch → `main` → `/root`.
+Lägg aldrig upp riktiga CSN-filer, personnummer eller testdata med personuppgifter i repot.

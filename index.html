@@ -12,7 +12,7 @@
       <div>
         <p class="eyebrow">INSU YH</p>
         <h1>CSN-konverterare</h1>
-        <p class="lead">Ladda upp CSN-mallen i Excel och ladda ner en färdig XML-fil. All bearbetning sker lokalt i webbläsaren.</p>
+        <p class="lead">Konvertera CSN-mallen i Excel till XML. All bearbetning sker lokalt i webbläsaren.</p>
       </div>
       <div class="badge">Ingen data skickas vidare</div>
     </header>
@@ -24,12 +24,8 @@
         <strong>Välj Excel-fil</strong>
         <span>eller dra filen hit</span>
       </label>
-
       <div class="settings">
-        <label>
-          XML-filnamn
-          <input id="outputName" type="text" value="csn-rapport.xml" />
-        </label>
+        <label>XML-filnamn<input id="outputName" type="text" value="csn-rapport.xml" /></label>
         <button id="downloadBtn" disabled>Ladda ner XML</button>
       </div>
     </section>
@@ -38,7 +34,7 @@
       <div class="stat"><span id="statRows">0</span><small>hittade rader</small></div>
       <div class="stat"><span id="statExported">0</span><small>exporteras</small></div>
       <div class="stat"><span id="statIgnored">0</span><small>ignoreras</small></div>
-      <div class="stat"><span id="statWarnings">0</span><small>kontroller</small></div>
+      <div class="stat"><span id="statWarnings">0</span><small>varningar</small></div>
     </section>
 
     <section class="grid two">
@@ -61,8 +57,14 @@
     </section>
 
     <section class="panel">
+      <h2>Debug-panel rad för rad</h2>
+      <p class="helper">Här ser Mia exakt varför en rad exporteras, får varning eller ignoreras.</p>
+      <div id="debugPanel" class="debug-list empty">Ladda upp en fil för att visa radkontroller.</div>
+    </section>
+
+    <section class="panel">
       <h2>Rader som ignoreras</h2>
-      <p class="helper">Rader här tas inte med i XML-filen. Oftast saknas något obligatoriskt fält eller så är raden halvifylld.</p>
+      <p class="helper">Rader här tas inte med i XML-filen.</p>
       <div class="table-wrap"><table id="ignoredTable"></table></div>
     </section>
 
