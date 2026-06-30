@@ -18,3 +18,8 @@ Lägg aldrig upp riktiga CSN-filer, personnummer eller testdata med personuppgif
 ## v5
 
 Ändrat XML-nedladdningen så filen sparas som vanlig text/UTF-8-byteformat, men med samma XML-deklaration som de befintliga CSN-exempelfilerna (`encoding="utf-16"`). Detta matchar filerna som CSN redan accepterar bättre än äkta UTF-16LE med BOM.
+
+
+## Version 6
+
+- Fix för Excel-datum som kunde exporteras som YYYY-DD-MM i stället för YYYY-MM-DD.
